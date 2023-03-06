@@ -10,7 +10,7 @@ jobs:
       matrix:
         go_version: [1.17.x]
         platform: [linux, darwin]
-        arch: [amd64, arm64, armv7, armv6]
+        arch: [amd64, arm64]
     
     runs-on: ${{ matrix.platform }}-latest
     
