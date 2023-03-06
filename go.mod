@@ -1,4 +1,4 @@
-module example.com/aicommitter
+module github.com/jiak94/aicommitter
 
 go 1.20
 
