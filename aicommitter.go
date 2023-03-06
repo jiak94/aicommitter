@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
-
-	"os"
-	"os/exec"
-
 	"bytes"
 	"encoding/json"
-
+	"flag"
+	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
 
 	"github.com/BurntSushi/toml"
 )
@@ -17,6 +15,7 @@ import (
 const (
 	URL           = "https://api.openai.com/v1/chat/completions"
 	DEFAULT_MODEL = "gpt-3.5-turbo"
+	VERSION       = "1.0"
 )
 
 type OpenAIConfig struct {
@@ -27,6 +26,13 @@ type OpenAIConfig struct {
 var _config OpenAIConfig
 
 func main() {
+	showVersion := flag.Bool("version", false, "Print the version information")
+	flag.Parse()
+	if *showVersion {
+		fmt.Printf("Version: %s\n", VERSION)
+		return
+	}
+
 	configLocation := getConfigLocation()
 	createOrGetOpenAIConfig(configLocation)
 
