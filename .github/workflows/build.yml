@@ -1,0 +1,44 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go_version: [1.17.x]
+        platform: [linux, darwin]
+        arch: [amd64, arm64, armv7, armv6]
+    
+    runs-on: ${{ matrix.platform }}-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+      
+      - name: Install dependencies
+        run: |
+          go get -v -t -d ./...
+          if [ -f "go.mod" ]; then
+            go mod download
+          fi
+      
+      - name: Build for ${{ matrix.platform }}/${{ matrix.arch }}
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.platform }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          go build -v -o aicommitter_${{ matrix.platform }}_${{ matrix.arch }}
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: aicommitter_${{ matrix.platform }}_${{ matrix.arch }}
+          path: ./aicommitter_${{ matrix.platform }}_${{ matrix.arch }}
