@@ -16,6 +16,8 @@ AI Committer will prompt you to confirm or edit the generated commit message bef
 
 ## Installation
 
+### From Source
+
 To install AI Committer, you need to have Go installed on your system. Then run:
 
 ```bash
@@ -25,6 +27,19 @@ go build -v -o aicommit
 ```
 
 This will generate a binary called `aicommit`. After successfully compiling the binary, move it to `$PATH` folder.
+
+### Download Prebuilt Binary
+
+Prebuilt binary are available [GitHub releases page](https://github.com/jiak94/aicommitter/releases)
+
+Choose the appropriate binary for your operating system and architecture:
+
+`aicommit_darwin_amd64`: for macOS using Intel chipset
+`aicommit_darwin_arm64`: for macOS using M1/M2
+`aicommit_linux_amd64`: for linux using amd64 architecture
+`aicommit_linux_arm64`: for linux using arm64 architecture
+
+Please remember to rename it to `aicommit` and put it into `$PATH` folder
 
 ## Configuration
 
