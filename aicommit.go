@@ -22,6 +22,7 @@ func main() {
 	config := flag.NewFlagSet("config", flag.ExitOnError)
 	model := config.String("model", "", "The model to use")
 	api_key := config.String("api-key", "", "The OpenAI API key")
+	show_config := config.Bool("show", false, "Show the current configuration")
 
 	// help flag
 	help := flag.Bool("help", false, "Print the help information")
@@ -42,6 +43,12 @@ func main() {
 		switch flag.Args()[0] {
 		case "config":
 			config.Parse(os.Args[2:])
+
+			if *show_config {
+				getConfig()
+				fmt.Printf("Model: %s, API key: %s\n", _config.Model, _config.OpenAIKey)
+				return
+			}
 			if len(*model) == 0 && len(*api_key) == 0 {
 				fmt.Println("Please specify a model or an API key")
 				os.Exit(1)
@@ -89,7 +96,7 @@ func showCommitMessage() {
 }
 
 func getDiff() (string, error) {
-	out, err := exec.Command("git", "diff", "HEAD").Output()
+	out, err := exec.Command("git", "diff", "--staged").Output()
 	if err != nil {
 		return "", err
 	}

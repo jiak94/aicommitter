@@ -5,7 +5,12 @@ on:
       - main
     tags:
       - "*"
+  pull_request:
+    branches: [main]
 
+permissions:
+  contents: write
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,89 +30,17 @@ jobs:
             go mod download
           fi
       
-      - name: Build for linux_amd64
-        env:
-          CGO_ENABLED: 0
-          GOOS: linux
-          GOARCH: amd64
-        run: |
-          go build -v -o aicommit_linux_amd64
-      
-      - name: Build for linux_arm64
-        env:
-          CGO_ENABLED: 0
-          GOOS: linux
-          GOARCH: arm64
-        run: |
-          go build -v -o aicommit_linux_amd64
-      
-      - name: Build for darwin_amd64
-        env:
-          CGO_ENABLED: 0
-          GOOS: darwin
-          GOARCH: amd64
-        run: |
-          go build -v -o aicommit_darwin_amd64
-      
-      - name: Build for darwin_arm64
-        env:
-          CGO_ENABLED: 0
-          GOOS: darwin
-          GOARCH: arm64
-        run: |
-          go build -v -o aicommit_darwin_arm64
+      - name: Build
+        run: make all
         
       - name: Create release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-      
-      - name: Upload binaries linux_amd64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./aicommit_linux_amd64
-          asset_name: aicommit_linux_amd64
-          asset_content_type: application/octet-stream
-      
-      - name: Upload binaries linux_arm64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./aicommit_linux_arm64
-          asset_name: aicommit_linux_arm64
-          asset_content_type: application/octet-stream
-
-      - name: Upload binaries darwin_arm64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./aicommit_darwin_arm64
-          asset_name: aicommit_darwin_arm64
-          asset_content_type: application/octet-stream
-      
-      - name: Upload binaries darwin_amd64
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./aicommit_darwin_amd64
-          asset_name: aicommit_darwin_amd64
-          asset_content_type: application/octet-stream
+          artifacts: "bin/*"
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: true
+          makeLatest: latest
+          tag: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}

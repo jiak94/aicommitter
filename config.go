@@ -23,10 +23,11 @@ func getConfigLocation() string {
 func getConfig() {
 	if _, err := toml.DecodeFile(getConfigLocation()+"/config.toml", &_config); err != nil {
 		fmt.Println(err)
+		fmt.Println("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
 		os.Exit(1)
 	}
 	if _config.OpenAIKey == "" || _config.OpenAIKey == "your_api_key" {
-		fmt.Println("Please update your OpenAI API key using\n aicommit config --api-key <your_api_key>")
+		fmt.Println("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
 		os.Exit(1)
 	}
 }
@@ -46,7 +47,10 @@ func setConfig(model, api_key string) {
 	if _, err := os.Stat(configLocation + "/config.toml"); os.IsNotExist(err) {
 		if model == "" {
 			config.Model = DEFAULT_MODEL
+		} else {
+			config.Model = model
 		}
+		
 		if api_key == "" {
 			config.OpenAIKey = "your_api_key"
 		} else {

@@ -1,4 +1,4 @@
-module github.com/jiak94/aicommitter
+module github.com/jiak94/aicommit
 
 go 1.20
 
