@@ -31,8 +31,6 @@ func main() {
 	}
 
 	if len(flag.Args()) > 0 {
-		log(fmt.Sprintf("%s\n", flag.Args()[0]))
-
 		switch flag.Args()[0] {
 		case "config":
 			ConfigCmd.Parse(os.Args[2:])
@@ -133,21 +131,4 @@ func printHelp() {
 	fmt.Println("  config --model <model_name>\t\tSet the model to use")
 	fmt.Println("  config --show\t\tshow the current configuration")
 	fmt.Println("  registerHook\t\tregister the prepare-commit-msg hook")
-}
-
-func log(logMsg string) error {
-	home := os.Getenv("HOME")
-	file, err := os.OpenFile(home+"/.aicommit.log", os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	_, err = writer.WriteString(fmt.Sprintln(logMsg))
-	if err != nil {
-		return err
-	}
-	return writer.Flush()
 }
