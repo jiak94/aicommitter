@@ -34,9 +34,17 @@ To set the OpenAI GPT-3 language model to use, run the following command:
 aicommit config --model <model_name>
 ```
 
-## Usage
+## Register AI committer as [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook
 
-To use AI Committer, run the following command:
+Navigate to the root directory of your git repository. Then run the following command:
+
+```bash
+aicommit registerHook
+```
+
+## Show AI generated commit message
+
+Add the changes to staging area. Then run the following command:
 
 ```bash
 aicommit
