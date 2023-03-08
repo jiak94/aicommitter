@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -16,83 +18,98 @@ const (
 var _config OpenAIConfig
 
 func main() {
-	showVersion := flag.Bool("version", false, "Print the version information")
-
-	// config subcommand
-	config := flag.NewFlagSet("config", flag.ExitOnError)
-	model := config.String("model", "", "The model to use")
-	api_key := config.String("api-key", "", "The OpenAI API key")
-	show_config := config.Bool("show", false, "Show the current configuration")
-
-	// help flag
-	help := flag.Bool("help", false, "Print the help information")
-
 	flag.Parse()
 
-	if *help {
+	if *Help {
 		printHelp()
 		return
 	}
 
-	if *showVersion {
+	if *ShowVersion {
 		fmt.Printf("Version: %s\n", VERSION)
 		return
 	}
 
 	if len(flag.Args()) > 0 {
+		log(fmt.Sprintf("%s\n", flag.Args()[0]))
+
 		switch flag.Args()[0] {
 		case "config":
-			config.Parse(os.Args[2:])
+			ConfigCmd.Parse(os.Args[2:])
 
-			if *show_config {
+			if *ShowConfig {
 				getConfig()
 				fmt.Printf("Model: %s, API key: %s\n", _config.Model, _config.OpenAIKey)
 				return
 			}
-			if len(*model) == 0 && len(*api_key) == 0 {
+			if len(*ConfigModel) == 0 && len(*ConfigAPIKey) == 0 {
 				fmt.Println("Please specify a model or an API key")
 				os.Exit(1)
 			}
-			setConfig(*model, *api_key)
+			setConfig(*ConfigModel, *ConfigAPIKey)
+			return
+		case "registerHook":
+			RegisterHookCmd.Parse(os.Args[2:])
+			registerPreCommitMsgHook(*RegisterHookForce)
 			return
 		default:
+			// if the first argument is a file, process it
+			if _, err := os.Stat(flag.Args()[0]); err == nil {
+				// process file
+				processFile(flag.Args()[0])
+				return
+			}
 			fmt.Printf("Unknown command: %s", flag.Args()[0])
 			os.Exit(1)
 		}
 	}
 
 	getConfig()
-
 	diff, err := getDiff()
 	if err != nil {
 		fmt.Printf("Error getting diff: %v\n", err)
-		os.Exit(1)
+		return
 	}
 
 	commitMsg, err := chatWithGPT3(diff)
 	if err != nil {
 		fmt.Printf("Error getting response from GPT-3: %s\n", err.Error())
-		os.Exit(1)
+		return
 	}
-
-	writeCommitMessage(commitMsg)
-	showCommitMessage()
+	fmt.Println(commitMsg)
 }
 
-func writeCommitMessage(message string) error {
-	_, err := exec.Command("git", "commit", "-m", message).Output()
+func processFile(file string) {
+	getConfig()
+	diff, err := getDiff()
+	if err != nil {
+		return
+	}
+	commitMsg, err := chatWithGPT3(diff)
+
+	if err != nil {
+		return
+	}
+
+	writeCommitMessage(commitMsg, file)
+}
+
+func writeCommitMessage(message, file string) error {
+	// Read the contents of the file
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	// Combine the string to add and the file contents into a single byte slice
+	newContents := append([]byte(message), data...)
+
+	// Write the new contents back to the file
+	err = ioutil.WriteFile(file, newContents, 0644)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func showCommitMessage() {
-	cmd := exec.Command("git", "commit", "--amend")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
 }
 
 func getDiff() (string, error) {
@@ -114,4 +131,23 @@ func printHelp() {
 	fmt.Println("Commands:")
 	fmt.Println("  config --api-key <your_api_key>\tSet the OpenAI API key")
 	fmt.Println("  config --model <model_name>\t\tSet the model to use")
+	fmt.Println("  config --show\t\tshow the current configuration")
+	fmt.Println("  registerHook\t\tregister the prepare-commit-msg hook")
+}
+
+func log(logMsg string) error {
+	home := os.Getenv("HOME")
+	file, err := os.OpenFile(home+"/.aicommit.log", os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	_, err = writer.WriteString(fmt.Sprintln(logMsg))
+	if err != nil {
+		return err
+	}
+	return writer.Flush()
 }
