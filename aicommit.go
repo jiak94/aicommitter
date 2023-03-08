@@ -10,7 +10,7 @@ import (
 const (
 	URL           = "https://api.openai.com/v1/chat/completions"
 	DEFAULT_MODEL = "gpt-3.5-turbo"
-	VERSION       = "1.0.0"
+	VERSION       = "1.0.1"
 )
 
 var _config OpenAIConfig
