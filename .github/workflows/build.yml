@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,6 +41,6 @@ jobs:
           artifactErrorsFailBuild: true
           generateReleaseNotes: true
           makeLatest: latest
-          tag: ${{ github.ref }}
-          name: Release ${{ github.ref }}
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
