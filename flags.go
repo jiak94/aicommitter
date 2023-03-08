@@ -13,7 +13,7 @@ var (
 
 	// registerHook subcommand
 	RegisterHookCmd = flag.NewFlagSet("registerHook", flag.ExitOnError)
-	RegisterHookForce = RegisterHookCmd.Bool("f", false, "Overwrite the existing pre-commit hook")
+	RegisterHookForce = RegisterHookCmd.Bool("f", false, "Overwrite the existing prepare-commit-msg hook")
 
 	// help flag
 	Help = flag.Bool("help", false, "Print the help information")
