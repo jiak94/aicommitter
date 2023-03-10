@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -7,9 +7,15 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const (
+	DEFAULT_MODEL   = "gpt-3.5-turbo"
+	DEFAULT_TIMEOUT = 5
+)
+
 type OpenAIConfig struct {
 	OpenAIKey string `toml:"OpenAIKey"`
 	Model     string `toml:"Model"`
+	Timeout   int    `toml:"Timeout"`
 }
 
 func getConfigLocation() string {
@@ -20,19 +26,19 @@ func getConfigLocation() string {
 	return configDir + "/aicommitter"
 }
 
-func getConfig() {
-	if _, err := toml.DecodeFile(getConfigLocation()+"/config.toml", &_config); err != nil {
+func GetConfig() (*OpenAIConfig, error) {
+	config := OpenAIConfig{}
+	if _, err := toml.DecodeFile(getConfigLocation()+"/config.toml", &config); err != nil {
 		fmt.Println(err)
-		fmt.Println("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
-		os.Exit(1)
+		return nil, fmt.Errorf("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
 	}
-	if _config.OpenAIKey == "" || _config.OpenAIKey == "your_api_key" {
-		fmt.Println("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
-		os.Exit(1)
+	if config.OpenAIKey == "" || config.OpenAIKey == "your_api_key" {
+		return nil, fmt.Errorf("Please update your OpenAI API key using\naicommit config --api-key <your_api_key>")
 	}
+	return &config, nil
 }
 
-func setConfig(model, api_key string) {
+func SetConfig(model, api_key string, timeout int) {
 	configLocation := getConfigLocation()
 	// Check if config directory exists
 	if _, err := os.Stat(configLocation); os.IsNotExist(err) {
@@ -42,20 +48,25 @@ func setConfig(model, api_key string) {
 		}
 	}
 
-	config := OpenAIConfig{}
+	config := OpenAIConfig{
+		Timeout:   DEFAULT_TIMEOUT,
+		OpenAIKey: "your_api_key",
+		Model:     DEFAULT_MODEL,
+	}
 	// Check if config file exists
 	if _, err := os.Stat(configLocation + "/config.toml"); os.IsNotExist(err) {
-		if model == "" {
-			config.Model = DEFAULT_MODEL
-		} else {
+		if model != "" {
 			config.Model = model
 		}
-		
-		if api_key == "" {
-			config.OpenAIKey = "your_api_key"
-		} else {
+
+		if api_key != "" {
 			config.OpenAIKey = api_key
 		}
+
+		if timeout > 0 {
+			config.Timeout = timeout
+		}
+
 	} else {
 		if _, err := toml.DecodeFile(configLocation+"/config.toml", &config); err != nil {
 			fmt.Println(err)
@@ -69,10 +80,14 @@ func setConfig(model, api_key string) {
 		if api_key != "" {
 			config.OpenAIKey = api_key
 		}
+
+		if timeout > 0 {
+			config.Timeout = timeout
+		}
 	}
 	file, err := os.Create(configLocation + "/config.toml")
 	defer file.Close()
-	
+
 	if err != nil {
 		fmt.Printf("Error creating aicommitter config file: %v\n", err)
 		os.Exit(1)

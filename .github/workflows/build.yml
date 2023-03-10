@@ -29,6 +29,9 @@ jobs:
           if [ -f "go.mod" ]; then
             go mod download
           fi
+
+      - name: Test
+        run: go test ./...
       
       - name: Build
         run: make all
