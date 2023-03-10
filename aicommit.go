@@ -6,15 +6,32 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	. "github.com/jiak94/aicommit/config"
+	. "github.com/jiak94/aicommit/openai"
 )
 
 const (
-	URL           = "https://api.openai.com/v1/chat/completions"
-	DEFAULT_MODEL = "gpt-3.5-turbo"
-	VERSION       = "1.0.1"
+	VERSION = "1.0.1"
 )
 
-var _config OpenAIConfig
+var (
+	ShowVersion = flag.Bool("version", false, "Print the version information")
+
+	// config subcommand
+	ConfigCmd    = flag.NewFlagSet("config", flag.ExitOnError)
+	ConfigModel  = ConfigCmd.String("model", "", "The model to use")
+	ConfigAPIKey = ConfigCmd.String("api-key", "", "The OpenAI API key")
+	ConfigTimeout = ConfigCmd.Int("timeout", 5, "The timeout for the OpenAI API call (in seconds)")
+	ShowConfig   = ConfigCmd.Bool("show", false, "Show the current configuration")
+
+	// registerHook subcommand
+	RegisterHookCmd   = flag.NewFlagSet("registerHook", flag.ExitOnError)
+	RegisterHookForce = RegisterHookCmd.Bool("f", false, "Overwrite the existing prepare-commit-msg hook")
+
+	// help flag
+	Help = flag.Bool("help", false, "Print the help information")
+)
 
 func main() {
 	flag.Parse()
@@ -35,15 +52,20 @@ func main() {
 			ConfigCmd.Parse(os.Args[2:])
 
 			if *ShowConfig {
-				getConfig()
-				fmt.Printf("Model: %s, API key: %s\n", _config.Model, _config.OpenAIKey)
+				config, err := GetConfig()
+				if err != nil {
+					fmt.Printf("Error getting config: %s\n", err.Error())
+					os.Exit(1)
+				}
+
+				fmt.Printf("Model: %s, API key: %s\n", config.Model, config.OpenAIKey)
 				return
 			}
 			if len(*ConfigModel) == 0 && len(*ConfigAPIKey) == 0 {
 				fmt.Println("Please specify a model or an API key")
 				os.Exit(1)
 			}
-			setConfig(*ConfigModel, *ConfigAPIKey)
+			SetConfig(*ConfigModel, *ConfigAPIKey, *ConfigTimeout)
 			return
 		case "registerHook":
 			RegisterHookCmd.Parse(os.Args[2:])
@@ -61,14 +83,13 @@ func main() {
 		}
 	}
 
-	getConfig()
 	diff, err := getDiff()
 	if err != nil {
 		fmt.Printf("Error getting diff: %v\n", err)
 		return
 	}
 
-	commitMsg, err := chatWithGPT3(diff)
+	commitMsg, err := ChatWithGPT3(diff)
 	if err != nil {
 		fmt.Printf("Error getting response from GPT-3: %s\n", err.Error())
 		return
@@ -77,21 +98,20 @@ func main() {
 }
 
 func processFile(file string) {
-	getConfig()
 	diff, err := getDiff()
 	if err != nil {
 		return
 	}
-	commitMsg, err := chatWithGPT3(diff)
+	commitMsg, err := ChatWithGPT3(diff)
 
 	if err != nil {
 		return
 	}
 
-	writeCommitMessage(commitMsg, file)
+	WriteCommitMessage(commitMsg, file)
 }
 
-func writeCommitMessage(message, file string) error {
+func WriteCommitMessage(message, file string) error {
 	// Read the contents of the file
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -128,6 +148,7 @@ func printHelp() {
 	fmt.Println("Commands:")
 	fmt.Println("  config --api-key <your_api_key>\tSet the OpenAI API key")
 	fmt.Println("  config --model <model_name>\t\tSet the model to use")
+	fmt.Println("  config --timeout <timeout>\t\tSet the timeout for the OpenAI API call (in seconds)")
 	fmt.Println("  config --show\t\tshow the current configuration")
 	fmt.Println("  registerHook\t\tregister the prepare-commit-msg hook")
 }
